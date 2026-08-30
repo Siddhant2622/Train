@@ -41,8 +41,8 @@ const ROADMAP = [
   { phase: "0", label: "Foundations", status: "done" },
   { phase: "1", label: "Data Spine", status: "done" },
   { phase: "2", label: "Baseline ETA + Map", status: "done" },
-  { phase: "3", label: "XGBoost + SHAP", status: "active" },
-  { phase: "4", label: "GRU + Kalman", status: "upcoming" },
+  { phase: "3", label: "XGBoost + SHAP", status: "done" },
+  { phase: "4", label: "GRU + Kalman", status: "active" },
   { phase: "5", label: "Delay Propagation", status: "upcoming" },
   { phase: "6", label: "Control Room", status: "upcoming" },
 ];

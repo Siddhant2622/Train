@@ -111,7 +111,7 @@ export default function TrainDetailPage({
                 <div className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-1">Model Layer</div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-950/40 border border-indigo-800/40 text-xs font-medium text-indigo-400">
                   <Activity className="h-3 w-3" />
-                  Physics Base
+                  {trainData.model_version === "xgboost_ensemble_v1" ? "XGBoost Ensemble" : "Physics Base"}
                 </div>
               </div>
             </div>
