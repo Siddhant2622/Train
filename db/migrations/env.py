@@ -13,8 +13,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # Import all models so Alembic's autogenerate can detect them
-from app.models.user import User  # noqa: F401 — registers User with Base.metadata
+# Import ALL models so Alembic autogenerate detects every table
+from app.models import User, Station, Train, TrainSchedule, Section, TrainPosition, Prediction  # noqa: F401
 from app.core.database import Base
+
 from app.core.config import get_settings
 
 config = context.config

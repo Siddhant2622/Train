@@ -13,14 +13,14 @@ A production-architecture implementation of an AI-powered train ETA prediction s
 
 ---
 
-## Current phase: **Phase 0 — Foundations**
+## Current phase: **Phase 3 — ML Layer**
 
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 0 — Foundations | ✅ **Done** | Monorepo, auth, deployed skeleton |
-| 1 — Data Spine | ⏳ Next | Schema, simulator, ingestion |
-| 2 — Baseline ETA | ⏳ | Physics model + map UI |
-| 3 — ML Layer | ⏳ | XGBoost + SHAP explainability |
+| 1 — Data Spine | ✅ **Done** | Schema, simulator, ingestion |
+| 2 — Baseline ETA | ✅ **Done** | Physics model + map UI |
+| 3 — ML Layer | ⏳ Next | XGBoost + SHAP explainability |
 | 4 — Sequence + Kalman | ⏳ | GRU + real-time correction |
 | 5 — Propagation | ⏳ | Cross-train delay cascade |
 | 6 — Control Room | ⏳ | RBAC + admin event injection |

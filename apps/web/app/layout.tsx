@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import Nav from "@/components/Nav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -10,33 +11,29 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RailPredict AI — Dynamic ETA Forecasting for Indian Railways",
+  title: "RailPredict AI — Dynamic ETA Forecasting",
   description:
-    "AI-powered real-time ETA predictions for Indian coaching trains. Built for SIH 2026 problem statement SIH26028 by the Ministry of Railways.",
-  keywords: [
-    "Indian Railways",
-    "train ETA",
-    "delay prediction",
-    "AI forecasting",
-    "SIH 2026",
-    "NTES",
-  ],
+    "Real-time AI-powered ETA predictions for Indian coaching trains. Physics + ML ensemble with SHAP explainability.",
+  keywords: ["Indian Railways", "train ETA", "train prediction", "delay forecast"],
   openGraph: {
     title: "RailPredict AI",
-    description: "Dynamic ETA Forecasting for Indian Coaching Trains",
+    description: "Dynamic ETA forecasting for Indian coaching trains",
     type: "website",
   },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased">
-        <Providers>{children}</Providers>
+      <body>
+        <Providers>
+          <Nav />
+          {children}
+        </Providers>
       </body>
     </html>
   );

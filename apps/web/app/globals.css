@@ -1,93 +1,395 @@
 @import "tailwindcss";
 
-:root {
-  --background: #08090d;
-  --foreground: #e8eaf0;
-  --card: #0f1117;
-  --card-border: #1e2130;
-  --primary: #6366f1;       /* indigo-500 */
-  --primary-glow: #6366f140;
-  --accent: #f59e0b;        /* amber */
-  --success: #10b981;
-  --danger: #ef4444;
-  --muted: #4b5563;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+/* =========================================================================
+   RailPredict AI — Design System
+   Dark glassmorphism · Indigo/Emerald accent · Premium feel
+   ========================================================================= */
+
+@layer base {
+  :root {
+    --bg-base: #080b14;
+    --bg-surface: #0d1220;
+    --bg-elevated: #111827;
+    --accent-primary: #6366f1;
+    --accent-secondary: #10b981;
+    --accent-danger: #ef4444;
+    --accent-warning: #f59e0b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --glow-indigo: 0 0 40px rgba(99, 102, 241, 0.15);
+    --glow-emerald: 0 0 40px rgba(16, 185, 129, 0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: "Inter", "Outfit", system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
 }
 
-* {
-  box-sizing: border-box;
+/* =========================================================================
+   Background effects
+   ========================================================================= */
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
-html {
-  scroll-behavior: smooth;
+.bg-radial-glow {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent);
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  min-height: 100vh;
+.bg-radial-glow-green {
+  background: radial-gradient(ellipse 60% 40% at 50% 80%, rgba(16, 185, 129, 0.08), transparent);
 }
 
-/* Animated gradient mesh background */
-.bg-mesh {
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, #6366f120 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, #f59e0b10 0%, transparent 50%),
-    var(--background);
-}
+/* =========================================================================
+   Glass morphism components
+   ========================================================================= */
 
-/* Glass card */
 .glass {
-  background: rgba(15, 17, 23, 0.7);
-  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
 }
 
-/* Glowing border on hover */
+.glass-strong {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .glow-hover {
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 .glow-hover:hover {
-  box-shadow: 0 0 0 1px var(--primary), 0 0 24px var(--primary-glow);
-  border-color: var(--primary);
+  box-shadow: var(--glow-indigo);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
 }
 
-/* Status badge pulse */
+/* =========================================================================
+   Navigation
+   ========================================================================= */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  background: rgba(8, 11, 20, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 2rem;
+}
+
+.nav-link {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-link:hover,
+.nav-link.active {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-spacer { flex: 1; }
+
+/* =========================================================================
+   Status badge
+   ========================================================================= */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.status-badge.online {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.status-badge.offline {
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.status-dot.online { background: #34d399; animation: pulse-dot 2s infinite; }
+.status-dot.offline { background: #64748b; }
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-.pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
-}
 
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #f59e0b 100%);
+/* =========================================================================
+   Hero section
+   ========================================================================= */
+
+.hero-gradient-text {
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 40%, #34d399 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Subtle fade-in for page entry */
+/* =========================================================================
+   Train search input
+   ========================================================================= */
+
+.search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* =========================================================================
+   Map styles
+   ========================================================================= */
+
+.maplibregl-map { border-radius: 0; }
+.maplibregl-ctrl-attrib { font-size: 10px !important; }
+.maplibregl-ctrl-bottom-right { bottom: 4px !important; right: 4px !important; }
+
+/* Custom train marker */
+.train-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+.train-marker:hover { transform: scale(1.2); }
+.train-marker.on-time { background: #059669; box-shadow: 0 0 10px rgba(5, 150, 105, 0.5); }
+.train-marker.delayed { background: #d97706; box-shadow: 0 0 10px rgba(217, 119, 6, 0.5); }
+.train-marker.severe { background: #dc2626; box-shadow: 0 0 10px rgba(220, 38, 38, 0.5); }
+.train-marker.unknown { background: #475569; }
+
+/* Map popup */
+.maplibregl-popup-content {
+  background: #0d1220 !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  color: #f1f5f9 !important;
+  font-family: "Inter", system-ui !important;
+  font-size: 13px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: rgba(99, 102, 241, 0.3) !important;
+  border-bottom-color: rgba(99, 102, 241, 0.3) !important;
+}
+.maplibregl-popup-close-button {
+  color: #64748b !important;
+  font-size: 16px !important;
+  right: 8px !important;
+  top: 6px !important;
+}
+
+/* =========================================================================
+   Page layout
+   ========================================================================= */
+
+.page {
+  min-height: 100vh;
+  padding-top: 60px;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* =========================================================================
+   Table
+   ========================================================================= */
+
+.arrivals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.arrivals-table th {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.arrivals-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-primary);
+}
+.arrivals-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* =========================================================================
+   Animations
+   ========================================================================= */
+
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.fade-up {
-  animation: fade-up 0.6s ease forwards;
-}
-.fade-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
-.fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
-.fade-up-delay-3 { animation-delay: 0.3s; opacity: 0; }
-.fade-up-delay-4 { animation-delay: 0.4s; opacity: 0; }
-.fade-up-delay-5 { animation-delay: 0.5s; opacity: 0; }
 
-/* Track line decoration */
-.track-line {
-  background: linear-gradient(90deg, transparent 0%, var(--primary) 50%, transparent 100%);
-  height: 1px;
-  opacity: 0.3;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-up { animation: fade-up 0.5s ease forwards; }
+.animate-fade-in { animation: fade-in 0.3s ease forwards; }
+
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* =========================================================================
+   Utility overrides
+   ========================================================================= */
+
+.text-gradient {
+  background: linear-gradient(90deg, #6366f1, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
 }

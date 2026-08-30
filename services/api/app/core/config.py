@@ -45,8 +45,12 @@ class Settings(BaseSettings):
     # ---- Sentry ----
     sentry_dsn: str = ""
 
+    # ---- Internal service auth (simulator → API) ----
+    internal_api_key: str = "dev-internal-key-change-in-production"
+
     # ---- API ----
     api_port: int = 8000
+
 
 
 @lru_cache
