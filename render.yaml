@@ -1,0 +1,30 @@
+# Render Blueprint — deploys the API service as a Web Service
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: railpredict-api
+    runtime: docker
+    dockerfilePath: ./services/api/Dockerfile
+    dockerContext: ./services/api
+    plan: free          # upgrade to starter/standard for production
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        sync: false     # set manually in Render dashboard — do NOT put real creds here
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true   # Render auto-generates a secure random value
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: CORS_ORIGINS
+        sync: false     # set to your Vercel frontend URL after deploy
+      - key: ENVIRONMENT
+        value: production
+      - key: SENTRY_DSN
+        sync: false     # optional — leave blank to disable

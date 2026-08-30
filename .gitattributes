@@ -1,0 +1,17 @@
+# Normalize line endings across platforms
+* text=auto
+
+# Force LF for shell scripts
+*.sh text eol=lf
+
+# Windows-specific files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaries — don't touch
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+*.pkl binary
+*.pt binary

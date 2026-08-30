@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # API — lint + type-check + integration tests
+  # ---------------------------------------------------------------------------
+  lint-api:
+    name: "API: lint & type-check"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: services/api/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Mypy type-check
+        run: mypy app/ --ignore-missing-imports
+
+  test-api:
+    name: "API: integration tests"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg16-latest
+        env:
+          POSTGRES_DB: railpredict_test
+          POSTGRES_USER: railpredict
+          POSTGRES_PASSWORD: test_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U railpredict"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://railpredict:test_password@localhost:5432/railpredict_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET_KEY: test-secret-key-not-for-production
+      CORS_ORIGINS: http://localhost:3000
+      ENVIRONMENT: testing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: services/api/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Alembic migrations against test DB
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ---------------------------------------------------------------------------
+  # Web — lint + type-check + build
+  # ---------------------------------------------------------------------------
+  lint-web:
+    name: "Web: lint & type-check"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+  test-web:
+    name: "Web: build check"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000

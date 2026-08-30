@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #08090d;
+  --foreground: #e8eaf0;
+  --card: #0f1117;
+  --card-border: #1e2130;
+  --primary: #6366f1;       /* indigo-500 */
+  --primary-glow: #6366f140;
+  --accent: #f59e0b;        /* amber */
+  --success: #10b981;
+  --danger: #ef4444;
+  --muted: #4b5563;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Animated gradient mesh background */
+.bg-mesh {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, #6366f120 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, #f59e0b10 0%, transparent 50%),
+    var(--background);
+}
+
+/* Glass card */
+.glass {
+  background: rgba(15, 17, 23, 0.7);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Glowing border on hover */
+.glow-hover {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.glow-hover:hover {
+  box-shadow: 0 0 0 1px var(--primary), 0 0 24px var(--primary-glow);
+  border-color: var(--primary);
+}
+
+/* Status badge pulse */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle fade-in for page entry */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fade-up 0.6s ease forwards;
+}
+.fade-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.fade-up-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.fade-up-delay-4 { animation-delay: 0.4s; opacity: 0; }
+.fade-up-delay-5 { animation-delay: 0.5s; opacity: 0; }
+
+/* Track line decoration */
+.track-line {
+  background: linear-gradient(90deg, transparent 0%, var(--primary) 50%, transparent 100%);
+  height: 1px;
+  opacity: 0.3;
+}

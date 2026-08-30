@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Database — TimescaleDB with PostGIS bundled
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: timescale/timescaledb-ha:pg16-latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: railpredict
+      POSTGRES_USER: railpredict
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
+    volumes:
+      - pgdata:/home/postgres/pgdata
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railpredict -d railpredict"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Redis — for Streams (pub/sub) and caching
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # API — FastAPI core service
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://railpredict:${DB_PASSWORD:-dev_password_change_me}@postgres:5432/railpredict
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Hot-reload in dev: mount source code into container
+      - ./services/api:/app:ro
+
+  # ---------------------------------------------------------------------------
+  # Web — Next.js frontend
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  # ---------------------------------------------------------------------------
+  # Phase 1+ services — commented out until implemented
+  # ---------------------------------------------------------------------------
+  # ml-inference:
+  #   build:
+  #     context: ./services/ml-inference
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   ports:
+  #     - "8001:8001"
+  #   depends_on:
+  #     - postgres
+  #     - redis
+
+  # simulator:
+  #   build:
+  #     context: ./services/simulator
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   depends_on:
+  #     - api
+
+volumes:
+  pgdata:
+    driver: local
