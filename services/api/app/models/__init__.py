@@ -10,6 +10,8 @@ from app.models.train_schedule import TrainSchedule
 from app.models.section import Section
 from app.models.train_position import TrainPosition
 from app.models.prediction import Prediction
+from app.models.propagation import Propagation
+from app.models.event import Event
 
 __all__ = [
     "User",
@@ -19,4 +21,6 @@ __all__ = [
     "Section",
     "TrainPosition",
     "Prediction",
+    "Propagation",
+    "Event",
 ]

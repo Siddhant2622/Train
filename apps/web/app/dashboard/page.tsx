@@ -103,6 +103,7 @@ export default function DashboardPage() {
                       <th>Train</th>
                       <th>Route</th>
                       <th>Next Stop</th>
+                      <th>Live Speed</th>
                       <th>Delay</th>
                     </tr>
                   </thead>
@@ -110,7 +111,7 @@ export default function DashboardPage() {
                     {delayed.map((t) => (
                       <tr
                         key={t.train_number}
-                        className="cursor-pointer"
+                        className="cursor-pointer hover:bg-white/[0.03] transition-colors"
                         onClick={() => (window.location.href = `/train/${t.train_number}`)}
                         id={`delayed-row-${t.train_number}`}
                       >
@@ -123,6 +124,16 @@ export default function DashboardPage() {
                         </td>
                         <td className="text-xs text-gray-400">
                           {t.next_station ?? "—"}
+                        </td>
+                        <td>
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                            (t.speed_kmh || 0) > 2 ? "text-emerald-400" : "text-gray-500"
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${
+                              (t.speed_kmh || 0) > 2 ? "bg-emerald-400 animate-pulse" : "bg-gray-600"
+                            }`} />
+                            {t.speed_kmh != null ? (t.speed_kmh > 2 ? `${Math.round(t.speed_kmh)} km/h` : "Halted") : "—"}
+                          </span>
                         </td>
                         <td>
                           <DelayBadge delayMin={t.current_delay_min} status={t.status} />

@@ -33,3 +33,10 @@ class StationArrivalsResponse(BaseModel):
     station_name: str
     arrivals: list[ArrivalEntry]
     generated_at: datetime
+
+
+class StationListResponse(BaseModel):
+    stations: list[StationBase]
+    total: int
+    page: int
+    page_size: int

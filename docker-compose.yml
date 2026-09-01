@@ -1,22 +1,7 @@
 version: "3.9"
 
 services:
-  postgres:
-    image: timescale/timescaledb-ha:pg16-latest
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: railpredict
-      POSTGRES_USER: railpredict
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
-    volumes:
-      - pgdata:/home/postgres/pgdata
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U railpredict -d railpredict"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
 
   redis:
     image: redis:7-alpine
@@ -36,7 +21,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://railpredict:${DB_PASSWORD:-dev_password_change_me}@postgres:5432/railpredict
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: http://localhost:3000
       ENVIRONMENT: development
@@ -44,8 +29,6 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
@@ -58,16 +41,13 @@ services:
       context: ./services/api
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql+asyncpg://railpredict:${DB_PASSWORD:-dev_password_change_me}@postgres:5432/railpredict
+      DATABASE_URL: ${DATABASE_URL}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@railpredict.dev}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe123!}
     volumes:
       - ./services/api:/app:ro
       - ./db:/app/db:ro
     command: ["python", "db/seed/seed.py"]
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: "no"
 
   simulator:
@@ -80,6 +60,19 @@ services:
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key-change-in-production}
       TICK_INTERVAL_SECONDS: "30"
       SIMULATOR_STARTUP_DELAY: "45"
+    depends_on:
+      - api
+
+  live_fetcher:
+    build:
+      context: ./services/simulator
+      dockerfile: Dockerfile
+    command: ["python", "live_fetcher.py"]
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: http://api:8000
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key-change-in-production}
+      RAILRADAR_API_KEY: ${RAILRADAR_API_KEY}
     depends_on:
       - api
 

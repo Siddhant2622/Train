@@ -1,39 +1,66 @@
 """Stations REST router — public read endpoints."""
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.schemas.stations import StationBase, StationArrivalsResponse, ArrivalEntry
+from app.schemas.stations import StationBase, StationArrivalsResponse, ArrivalEntry, StationListResponse
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api/v1/stations", tags=["stations"])
 
 
-@router.get("", response_model=list[StationBase])
+@router.get("", response_model=StationListResponse)
+@limiter.limit("60/minute")
 async def list_stations(
+    request: Request,
+    q: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
     zone: str | None = None,
     major_only: bool = False,
     db: AsyncSession = Depends(get_db),
-) -> list[StationBase]:
-    """Return all stations, optionally filtered by zone or major flag."""
+) -> StationListResponse:
+    """Return stations, optionally filtered by search query, zone, or major flag."""
+    offset = (page - 1) * page_size
+    
+    # We use ILIKE for case-insensitive partial match
+    search_term = f"%{q}%" if q else None
+
     rows = await db.execute(
         text("""
             SELECT station_code, name, city, state, zone, latitude, longitude,
                    is_major, platform_count
             FROM stations
-            WHERE (:zone IS NULL OR zone = :zone)
-              AND (:major_only = false OR is_major = true)
+            WHERE (CAST(:zone AS VARCHAR) IS NULL OR zone = CAST(:zone AS VARCHAR))
+              AND (CAST(:major_only AS BOOLEAN) = false OR is_major = true)
+              AND (CAST(:q AS VARCHAR) IS NULL OR name ILIKE CAST(:q AS VARCHAR) OR station_code ILIKE CAST(:q AS VARCHAR) OR city ILIKE CAST(:q AS VARCHAR))
             ORDER BY is_major DESC, name
+            LIMIT :limit OFFSET :offset
         """),
-        {"zone": zone, "major_only": major_only},
+        {"zone": zone, "major_only": major_only, "q": search_term, "limit": page_size, "offset": offset},
     )
-    return [StationBase(**dict(r)) for r in rows.mappings().all()]
+    stations = [StationBase(**dict(r)) for r in rows.mappings().all()]
+    
+    count_row = await db.execute(
+        text("""
+            SELECT count(*) FROM stations 
+            WHERE (CAST(:zone AS VARCHAR) IS NULL OR zone = CAST(:zone AS VARCHAR))
+              AND (CAST(:major_only AS BOOLEAN) = false OR is_major = true)
+              AND (CAST(:q AS VARCHAR) IS NULL OR name ILIKE CAST(:q AS VARCHAR) OR station_code ILIKE CAST(:q AS VARCHAR) OR city ILIKE CAST(:q AS VARCHAR))
+        """),
+        {"zone": zone, "major_only": major_only, "q": search_term},
+    )
+    total = count_row.scalar() or 0
+
+    return StationListResponse(stations=stations, total=total, page=page, page_size=page_size)
 
 
 @router.get("/{station_code}", response_model=StationBase)
-async def get_station(station_code: str, db: AsyncSession = Depends(get_db)) -> StationBase:
+@limiter.limit("60/minute")
+async def get_station(request: Request, station_code: str, db: AsyncSession = Depends(get_db)) -> StationBase:
     row = await db.execute(
         text("SELECT * FROM stations WHERE station_code = :code"),
         {"code": station_code.upper()},
@@ -45,7 +72,9 @@ async def get_station(station_code: str, db: AsyncSession = Depends(get_db)) -> 
 
 
 @router.get("/{station_code}/arrivals", response_model=StationArrivalsResponse)
+@limiter.limit("60/minute")
 async def station_arrivals(
+    request: Request,
     station_code: str,
     limit: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),

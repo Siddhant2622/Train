@@ -71,34 +71,80 @@ export const auth = {
 // Trains
 // ---------------------------------------------------------------------------
 export interface LivePosition {
-  latitude: number | null; longitude: number | null; speed_kmh: number | null;
-  last_station: string | null; next_station: string | null;
-  distance_to_next_km: number | null; current_delay_min: number;
-  updated_at: string; source: string;
+  latitude: number | null;
+  longitude: number | null;
+  speed_kmh: number | null;
+  last_station: string | null;
+  next_station: string | null;
+  distance_to_next_km: number | null;
+  current_delay_min: number;
+  updated_at: string;
+  source: string;
+  status?: string | null;
+  status_message?: string | null;
+  distance_covered_km?: number | null;
+  total_distance_km?: number | null;
+  is_halted?: boolean;
 }
+
 export interface StopEta {
-  station_code: string; station_name: string; sequence: number;
-  scheduled_arrival: string | null; predicted_eta: string;
-  lower_bound: string; upper_bound: string; confidence: number; delay_min: number;
+  station_code: string;
+  station_name: string;
+  sequence: number;
+  scheduled_arrival: string | null;
+  scheduled_departure?: string | null;
+  predicted_eta: string;
+  lower_bound: string;
+  upper_bound: string;
+  confidence: number;
+  delay_min: number;
+  platform?: string | null;
+  distance_km?: number | null;
+  is_halt?: boolean;
+  status?: string;
   explanation?: Record<string, any>;
 }
+
 export interface TrainSummary {
-  train_number: string; name: string; train_type: string | null;
-  source_station: string; destination_station: string;
-  current_delay_min: number; status: string;
-  latitude: number | null; longitude: number | null;
-  next_station: string | null; last_updated: string | null;
+  train_number: string;
+  name: string;
+  train_type: string | null;
+  source_station: string;
+  destination_station: string;
+  current_delay_min: number;
+  status: string;
+  latitude: number | null;
+  longitude: number | null;
+  speed_kmh?: number | null;
+  next_station: string | null;
+  last_updated: string | null;
 }
+
 export interface TrainDetail {
-  train_number: string; name: string; train_type: string | null; zone: string | null;
-  source_station: string; destination_station: string;
-  total_distance_km: number | null; run_date: string | null;
-  position: LivePosition | null; upcoming_stops: StopEta[];
+  train_number: string;
+  name: string;
+  train_type: string | null;
+  zone: string | null;
+  source_station: string;
+  destination_station: string;
+  total_distance_km: number | null;
+  run_date: string | null;
+  position: LivePosition | null;
+  upcoming_stops: StopEta[];
   model_version: string;
+  coach_position?: string | null;
+  status?: string | null;
+  total_halts?: number | null;
+  avg_speed_kmh?: number | null;
 }
+
 export interface TrainListResponse {
-  trains: TrainSummary[]; total: number; page: number; page_size: number;
+  trains: TrainSummary[];
+  total: number;
+  page: number;
+  page_size: number;
 }
+
 
 export const trains = {
   list: (params?: { page?: number; page_size?: number; zone?: string; status?: string }) => {
@@ -157,4 +203,11 @@ export interface FleetSummary {
 
 export const admin = {
   fleetSummary: () => apiRequest<FleetSummary>("/api/v1/admin/fleet-summary"),
+  createEvent: (data: any) =>
+    apiRequest<any>("/api/v1/admin/events", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
+
+

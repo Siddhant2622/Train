@@ -13,7 +13,7 @@ A production-architecture implementation of an AI-powered train ETA prediction s
 
 ---
 
-## Current phase: **Phase 4 — Sequence + Kalman**
+## Current phase: **Complete**
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -21,10 +21,10 @@ A production-architecture implementation of an AI-powered train ETA prediction s
 | 1 — Data Spine | ✅ **Done** | Schema, simulator, ingestion |
 | 2 — Baseline ETA | ✅ **Done** | Physics model + map UI |
 | 3 — ML Layer | ✅ **Done** | XGBoost + SHAP explainability |
-| 4 — Sequence + Kalman | ⏳ Next | GRU + real-time correction |
-| 5 — Propagation | ⏳ | Cross-train delay cascade |
-| 6 — Control Room | ⏳ | RBAC + admin event injection |
-| 7 — Hardening | ⏳ | Load test, security, observability |
+| 4 — Sequence + Kalman | ✅ **Done** | GRU + real-time correction |
+| 5 — Propagation | ✅ **Done** | Cross-train delay cascade |
+| 6 — Control Room | ✅ **Done** | RBAC + admin event injection |
+| 7 — Hardening | ✅ **Done** | Load test, security, observability |
 
 ---
 

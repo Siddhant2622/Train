@@ -23,7 +23,8 @@ config = context.config
 settings = get_settings()
 
 # Override sqlalchemy.url with the real URL from settings
-config.set_main_option("sqlalchemy.url", settings.database_url)
+safe_url = settings.database_url.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", safe_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -55,6 +56,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0},
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

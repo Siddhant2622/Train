@@ -42,9 +42,10 @@ const ROADMAP = [
   { phase: "1", label: "Data Spine", status: "done" },
   { phase: "2", label: "Baseline ETA + Map", status: "done" },
   { phase: "3", label: "XGBoost + SHAP", status: "done" },
-  { phase: "4", label: "GRU + Kalman", status: "active" },
-  { phase: "5", label: "Delay Propagation", status: "upcoming" },
-  { phase: "6", label: "Control Room", status: "upcoming" },
+  { phase: "4", label: "GRU + Kalman", status: "done" },
+  { phase: "5", label: "Delay Propagation", status: "done" },
+  { phase: "6", label: "Control Room", status: "done" },
+  { phase: "7", label: "Hardening", status: "done" },
 ];
 
 export default function HomePage() {
@@ -53,12 +54,20 @@ export default function HomePage() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    const q = query.trim();
+    const q = query.trim().toUpperCase();
     if (!q) return;
-    if (/^\d{4,5}$/.test(q)) {
+    
+    // Looks like a train number (4-6 digits)
+    if (/^\d{4,6}$/.test(q)) {
       router.push(`/train/${q}`);
-    } else {
-      router.push(`/stations/${q.toUpperCase()}`);
+    } 
+    // Looks like a station code (2-4 letters)
+    else if (/^[A-Z]{2,4}$/.test(q)) {
+      router.push(`/stations/${q}`);
+    } 
+    // Otherwise, it's likely a name, send them to the trains directory search
+    else {
+      router.push(`/train?q=${encodeURIComponent(query)}`);
     }
   }
 
@@ -109,6 +118,14 @@ export default function HomePage() {
             <a href="/map" className="btn-ghost" id="hero-cta-map">
               <Map className="h-4 w-4" />
               Live Map
+            </a>
+            <a href="/train" className="btn-ghost" id="hero-cta-trains">
+              <Train className="h-4 w-4" />
+              Browse Trains
+            </a>
+            <a href="/stations" className="btn-ghost" id="hero-cta-stations">
+              <Search className="h-4 w-4" />
+              Browse Stations
             </a>
           </div>
         </div>

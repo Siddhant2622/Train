@@ -133,12 +133,8 @@ def upgrade() -> None:
         sa.Column("raw_payload", postgresql.JSONB(), nullable=True),
     )
     # Convert to hypertable — fails gracefully if TimescaleDB not installed
-    op.execute("""
-        SELECT create_hypertable('train_positions', 'time',
-            if_not_exists => TRUE,
-            chunk_time_interval => INTERVAL '1 day'
-        );
-    """)
+    # Supabase does not support TimescaleDB extension, so we skip create_hypertable
+    pass
     op.create_index("ix_train_positions_train_time", "train_positions", ["train_number", "time"])
 
     # ------------------------------------------------------------------
@@ -158,12 +154,8 @@ def upgrade() -> None:
         sa.Column("model_version", sa.String(20), server_default="physics_v1"),
         sa.Column("explanation", postgresql.JSONB(), nullable=True),
     )
-    op.execute("""
-        SELECT create_hypertable('predictions', 'time',
-            if_not_exists => TRUE,
-            chunk_time_interval => INTERVAL '1 day'
-        );
-    """)
+    # Supabase does not support TimescaleDB extension, so we skip create_hypertable
+    pass
     op.create_index("ix_predictions_train_time", "predictions", ["train_number", "time"])
     op.create_index("ix_predictions_train_station", "predictions", ["train_number", "station_code"])
 

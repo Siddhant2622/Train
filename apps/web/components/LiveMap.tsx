@@ -30,7 +30,6 @@ export default function LiveMap({ trains, onTrainSelect }: LiveMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
-  const popupsRef = useRef<Map<string, any>>(new Map());
 
   const initMap = useCallback(async () => {
     const maplibregl = (await import("maplibre-gl")) as any;
@@ -39,39 +38,54 @@ export default function LiveMap({ trains, onTrainSelect }: LiveMapProps) {
 
     if (!mapContainerRef.current || mapRef.current) return;
 
+    // If single train with valid coords, start centered on it
+    const singleValid = trains.length === 1 && trains[0].latitude && trains[0].longitude && trains[0].latitude !== 0;
+    const initialCenter: [number, number] = singleValid 
+      ? [trains[0].longitude!, trains[0].latitude!] 
+      : [79.5, 22.0];
+    const initialZoom = singleValid ? 8.0 : 4.6;
+
     const map = new maplibreglInstance.Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
         sources: {
-          "osm-tiles": {
+          "light-tiles": {
             type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tiles: [
+              "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+              "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+              "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+              "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            ],
             tileSize: 256,
-            attribution: "© OpenStreetMap contributors",
+            attribution: "© OpenStreetMap contributors, © CARTO",
           },
         },
         layers: [
           {
-            id: "osm",
+            id: "light-base",
             type: "raster",
-            source: "osm-tiles",
+            source: "light-tiles",
             paint: {
-              "raster-opacity": 0.3,  // dark overlay feel
-              "raster-saturation": -0.8,
-              "raster-brightness-min": 0,
-              "raster-brightness-max": 0.3,
+              "raster-opacity": 1.0,
+              "raster-saturation": 0.05,
+              "raster-contrast": 0.05,
             },
           },
         ],
       },
-      center: [82.0, 23.5], // centre of India
-      zoom: 4.5,
-      maxZoom: 16,
+      center: initialCenter,
+      zoom: initialZoom,
+      maxZoom: 17,
+      minZoom: 3.5,
     });
 
+    // Add navigation controls
+    map.addControl(new maplibreglInstance.NavigationControl({ showCompass: false }), "top-right");
+
     mapRef.current = map;
-  }, []);
+  }, [trains]);
 
   // Initialise map once
   useEffect(() => {
@@ -84,7 +98,7 @@ export default function LiveMap({ trains, onTrainSelect }: LiveMapProps) {
     };
   }, [initMap]);
 
-  // Update markers whenever trains change
+  // Update markers and view whenever trains change
   useEffect(() => {
     const updateMarkers = async () => {
       const map = mapRef.current;
@@ -95,26 +109,31 @@ export default function LiveMap({ trains, onTrainSelect }: LiveMapProps) {
       const seen = new Set<string>();
 
       for (const train of trains) {
-        if (train.latitude == null || train.longitude == null) continue;
+        if (train.latitude == null || train.longitude == null || (train.latitude === 0 && train.longitude === 0)) continue;
         const key = train.train_number;
         seen.add(key);
 
         const color = DELAY_COLORS[train.status as keyof typeof DELAY_COLORS] ?? DELAY_COLORS.unknown;
+        const speedText = train.speed_kmh != null ? `${Math.round(train.speed_kmh)} km/h` : "Live";
+        const titleText = `${train.train_number} ${train.name} (${speedText}) | Delay: +${Math.round(train.current_delay_min)}m`;
 
         if (markersRef.current.has(key)) {
           // Move existing marker
           markersRef.current.get(key)!.setLngLat([train.longitude, train.latitude]);
-          // Update colour by replacing element
           const el = markersRef.current.get(key)!.getElement();
-          el.querySelector("img")!.src = trainSvg(color);
+          const img = el.querySelector("img");
+          if (img) img.src = trainSvg(color);
+          el.title = titleText;
         } else {
-          // Create new marker
+          // Create new marker with pulsing shadow
           const el = document.createElement("div");
-          el.style.cssText = "cursor:pointer;width:28px;height:28px;";
+          el.style.cssText = "cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.35));";
+          el.title = titleText;
+          
           const img = document.createElement("img");
           img.src = trainSvg(color);
-          img.style.cssText = "width:28px;height:28px;transition:transform 0.15s;";
-          img.onmouseenter = () => { img.style.transform = "scale(1.25)"; };
+          img.style.cssText = "width:32px;height:32px;transition:transform 0.15s ease-out;";
+          img.onmouseenter = () => { img.style.transform = "scale(1.3)"; };
           img.onmouseleave = () => { img.style.transform = "scale(1)"; };
           el.appendChild(img);
 
@@ -124,6 +143,14 @@ export default function LiveMap({ trains, onTrainSelect }: LiveMapProps) {
             .setLngLat([train.longitude, train.latitude])
             .addTo(map);
           markersRef.current.set(key, marker);
+        }
+
+        // If single train detail view, smoothly ease map to train position
+        if (trains.length === 1 && train.latitude && train.longitude) {
+          map.easeTo({
+            center: [train.longitude, train.latitude],
+            duration: 1000,
+          });
         }
       }
 
@@ -143,7 +170,7 @@ export default function LiveMap({ trains, onTrainSelect }: LiveMapProps) {
     <div
       ref={mapContainerRef}
       className="h-full w-full"
-      style={{ background: "#080b14" }}
+      style={{ background: "#e2e8f0" }}
       id="map-container"
     />
   );

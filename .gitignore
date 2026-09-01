@@ -40,9 +40,15 @@ models/artifacts/
 *.log
 
 # === IDE ===
-.vscode/
-.idea/
+*.vscode/
+*.idea/
 *.swp
 *.swo
-.DS_Store
+*.DS_Store
 Thumbs.db
+
+# === Scratch & Temporary ===
+scratch_*
+temp_*
+test_db_conn.py
+services/api/scratch_check.py

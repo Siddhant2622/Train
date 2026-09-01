@@ -10,9 +10,10 @@ import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.core.config import get_settings
 from app.core.database import check_db_connection
@@ -36,7 +37,7 @@ if settings.sentry_dsn:
 # ---------------------------------------------------------------------------
 # Rate limiter
 # ---------------------------------------------------------------------------
-limiter = Limiter(key_func=get_remote_address)
+from app.core.rate_limit import limiter
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +63,8 @@ app = FastAPI(
     redoc_url="/redoc" if not settings.is_production else None,
     lifespan=lifespan,
 )
+
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
     CORSMiddleware,

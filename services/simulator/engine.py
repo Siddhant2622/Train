@@ -198,6 +198,7 @@ class SimulatorEngine:
             scheduled_departure=parse_dt(raw.get("scheduled_departure"), offset),
             distance_from_source_km=float(raw.get("distance_from_source_km", 0)),
             avg_halt_minutes=float(raw.get("avg_halt_minutes", 2)),
+            day_offset=offset,
         )
 
     def _estimate_current_stop_idx(self, run: TrainRun) -> int:
@@ -238,35 +239,66 @@ class SimulatorEngine:
             logger.info("Event on %s: %s (+%.1f min delay)", run.train_number,
                         new_event.event_type, new_event.delay_impact_min)
 
-        # Determine effective speed
-        speed_kmh = last_stop.section_avg_speed_kmh * random.gauss(1.0, 0.05)
-        for event in run.active_events:
-            if event.speed_restriction_kmh:
-                speed_kmh = min(speed_kmh, event.speed_restriction_kmh)
-        speed_kmh = max(speed_kmh, 5.0)
-
-        # How long since we departed last stop
+        # Initialise departure time if not set
         if run.departed_at is None:
             run.departed_at = now
-        elapsed_min = (now - run.departed_at).total_seconds() / 60
 
-        section_dist = next_stop.distance_from_source_km - last_stop.distance_from_source_km
-        section_dist = max(section_dist, 1.0)
-        travel_time_min = (section_dist / speed_kmh) * 60
+        section_dist = max(next_stop.distance_from_source_km - last_stop.distance_from_source_km, 1.0)
 
-        fraction = min(elapsed_min / travel_time_min, 1.0) if travel_time_min > 0 else 1.0
+        # Check if train is currently halted at station
+        if now < run.departed_at:
+            return {
+                "train_number": run.train_number,
+                "run_date": str(run.run_date),
+                "timestamp": now.isoformat(),
+                "latitude": round(last_stop.latitude, 6),
+                "longitude": round(last_stop.longitude, 6),
+                "speed_kmh": 0.0,
+                "last_station": last_stop.station_code,
+                "next_station": next_stop.station_code,
+                "distance_to_next_km": round(section_dist, 2),
+                "current_delay_min": round(run.current_delay_min, 1),
+                "source": "simulator",
+            }
+
+        # Determine section cruising speed based on track limits & events
+        max_speed = max(min(last_stop.section_max_speed_kmh, 130.0), 30.0)
+        avg_speed = max(min(last_stop.section_avg_speed_kmh, max_speed), 25.0)
+        target_speed_kmh = avg_speed * random.gauss(1.0, 0.03)
+
+        for event in run.active_events:
+            if event.speed_restriction_kmh:
+                target_speed_kmh = min(target_speed_kmh, event.speed_restriction_kmh)
+        target_speed_kmh = max(min(target_speed_kmh, max_speed), 15.0)
+
+        # Calculate progress between stations
+        elapsed_min = (now - run.departed_at).total_seconds() / 60.0
+        travel_time_min = (section_dist / target_speed_kmh) * 60.0
+        fraction = min(max(elapsed_min / travel_time_min, 0.0), 1.0) if travel_time_min > 0 else 1.0
+
+        # Model realistic instantaneous speed profile (acceleration / cruise / deceleration)
+        if fraction < 0.12:
+            # Accelerating out of last station
+            current_speed = max(10.0, target_speed_kmh * (fraction / 0.12))
+        elif fraction > 0.88:
+            # Decelerating on approach to next station
+            current_speed = max(12.0, target_speed_kmh * ((1.0 - fraction) / 0.12))
+        else:
+            # Cruising at target section speed
+            current_speed = target_speed_kmh
+
         lat, lon = _interpolate_position(
             last_stop.latitude, last_stop.longitude,
             next_stop.latitude, next_stop.longitude,
             fraction,
         )
-        distance_remaining = section_dist * (1.0 - fraction)
+        distance_remaining = max(0.0, section_dist * (1.0 - fraction))
 
-        # Check if we've arrived at next stop
+        # Check if train arrived at next stop
         if fraction >= 1.0:
-            # Apply partial delay recovery at stations (trains can make up some time)
+            # Apply partial delay recovery at stations
             recovery = min(run.current_delay_min * 0.1, 3.0)
-            run.current_delay_min = max(0, run.current_delay_min - recovery)
+            run.current_delay_min = max(0.0, run.current_delay_min - recovery)
 
             # Halt at the station
             halt_end = now + timedelta(minutes=next_stop.avg_halt_minutes)
@@ -274,7 +306,8 @@ class SimulatorEngine:
             run.departed_at = halt_end
 
             lat, lon = next_stop.latitude, next_stop.longitude
-            distance_remaining = 0
+            distance_remaining = 0.0
+            current_speed = 0.0
 
         return {
             "train_number": run.train_number,
@@ -282,7 +315,7 @@ class SimulatorEngine:
             "timestamp": now.isoformat(),
             "latitude": round(lat, 6),
             "longitude": round(lon, 6),
-            "speed_kmh": round(speed_kmh, 1),
+            "speed_kmh": round(current_speed, 1),
             "last_station": run.last_stop.station_code,
             "next_station": (run.next_stop.station_code if run.next_stop else run.last_stop.station_code),
             "distance_to_next_km": round(distance_remaining, 2),

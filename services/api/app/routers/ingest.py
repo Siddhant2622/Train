@@ -13,6 +13,7 @@ Rate limited and requires an internal API key — not exposed publicly.
 """
 
 import logging
+import json
 from datetime import datetime, timezone, date as date_type
 
 import redis.asyncio as aioredis
@@ -170,9 +171,9 @@ async def ingest_position(
         train_number=ping.train_number,
         run_date=str(ping.run_date),
         now=now,
-        current_delay_min=float(ping.current_delay_min),
-        current_speed_kmph=float(ping.speed_kmh),
-        distance_to_next_km=float(ping.distance_to_next_km),
+        current_delay_min=ping.current_delay_min,
+        current_speed_kmph=ping.speed_kmh,
+        distance_to_next_km=ping.distance_to_next_km,
         last_station_code=ping.last_station,
         next_station_code=ping.next_station,
         upcoming_stops=upcoming,
@@ -181,11 +182,52 @@ async def ingest_position(
     )
 
     from app.eta.ml_xgboost import apply_ml_layer
+    from app.eta.ml_sequence import apply_sequence_layer
+    from app.eta.kalman import apply_kalman_filter
+    from app.eta.propagation import detect_propagation, apply_propagation_layer
+    from app.eta.events import fetch_active_events, apply_event_layer
+
+    # Phase 5: Detect cross-train propagation first
+    await detect_propagation(
+        db=db,
+        cause_train=ping.train_number,
+        current_delay_min=ping.current_delay_min,
+        next_station=ping.next_station,
+        now=now,
+    )
+    
+    # Fetch active control room events (Phase 6)
+    active_events = await fetch_active_events(db)
+
+    # Layer 2: XGBoost Residuals
     eta_result = apply_ml_layer(
         eta_result=eta_result,
-        current_speed_kmph=float(ping.speed_kmh),
+        current_speed_kmph=ping.speed_kmh,
         time_of_day_hour=now.hour,
         day_of_week=now.weekday()
+    )
+    
+    # Layer 3: GRU Sequence Modeling
+    eta_result = apply_sequence_layer(
+        eta_result=eta_result,
+        time_of_day_hour=now.hour
+    )
+    
+    # Layer 4: Kalman Filter Smoothing
+    eta_result = apply_kalman_filter(
+        eta_result=eta_result
+    )
+
+    # Layer 5: Network Delay Cascade Propagation
+    eta_result = await apply_propagation_layer(
+        db=db,
+        eta_result=eta_result
+    )
+    
+    # Layer 6: Control Room Events (Overrides everything else)
+    eta_result = apply_event_layer(
+        eta_result=eta_result,
+        active_events=active_events
     )
 
     # ------------------------------------------------------------------
@@ -214,8 +256,8 @@ async def ingest_position(
                 "lower_bound": stop.lower_bound,
                 "upper_bound": stop.upper_bound,
                 "confidence": stop.confidence,
-                "model_version": eta_result.model_version,
-                "explanation": stop.explanation,
+                "model_version": eta_result.model_version[:20],
+                "explanation": json.dumps(stop.explanation),
             },
         )
     await db.commit()
@@ -230,10 +272,11 @@ async def ingest_position(
         "timestamp": now.isoformat(),
         "latitude": ping.latitude,
         "longitude": ping.longitude,
-        "speed_kmh": float(ping.speed_kmh),
-        "current_delay_min": float(ping.current_delay_min),
+        "speed_kmh": ping.speed_kmh,
+        "current_delay_min": ping.current_delay_min,
         "last_station": ping.last_station,
         "next_station": ping.next_station,
+        "distance_to_next_km": ping.distance_to_next_km,
         "upcoming_stops": [
             {
                 "station_code": s.station_code,

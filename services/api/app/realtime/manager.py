@@ -36,22 +36,33 @@ class ConnectionManager:
 
     async def startup(self, redis_url: str) -> None:
         """Call during FastAPI lifespan startup."""
-        self._redis = aioredis.from_url(redis_url, decode_responses=True)
-        self._pubsub = self._redis.pubsub()
-        # Subscribe to fleet channel — individual train channels added on demand
-        await self._pubsub.psubscribe("predictions:*")
-        self._listener_task = asyncio.create_task(self._listen())
-        logger.info("WebSocket manager started — subscribed to predictions:*")
+        try:
+            self._redis = aioredis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2.0)
+            self._pubsub = self._redis.pubsub()
+            # Subscribe to fleet channel — individual train channels added on demand
+            await self._pubsub.psubscribe("predictions:*")
+            self._listener_task = asyncio.create_task(self._listen())
+            logger.info("WebSocket manager started — subscribed to predictions:*")
+        except Exception as e:
+            logger.warning("Redis not reachable (%s) — falling back to in-memory WebSocket broadcasting", e)
+            self._redis = None
+            self._pubsub = None
 
     async def shutdown(self) -> None:
         """Call during FastAPI lifespan shutdown."""
         if self._listener_task:
             self._listener_task.cancel()
         if self._pubsub:
-            await self._pubsub.punsubscribe()
-            await self._pubsub.close()
+            try:
+                await self._pubsub.punsubscribe()
+                await self._pubsub.close()
+            except Exception:
+                pass
         if self._redis:
-            await self._redis.aclose()
+            try:
+                await self._redis.aclose()
+            except Exception:
+                pass
 
     async def connect_fleet(self, ws: WebSocket) -> None:
         await ws.accept()
@@ -70,11 +81,19 @@ class ConnectionManager:
         self._train_connections[train_number].discard(ws)
 
     async def publish(self, train_number: str, payload: dict[str, Any]) -> None:
-        """Publish a prediction update to Redis so all API instances relay it."""
+        """Publish a prediction update to Redis or directly broadcast in-memory."""
+        published = False
         if self._redis:
-            await self._redis.publish(
-                f"predictions:{train_number}", json.dumps(payload)
-            )
+            try:
+                await self._redis.publish(
+                    f"predictions:{train_number}", json.dumps(payload)
+                )
+                published = True
+            except Exception as e:
+                logger.debug("Redis publish failed, using direct broadcast: %s", e)
+        
+        if not published:
+            await self._broadcast(train_number, payload)
 
     async def _listen(self) -> None:
         """Background task that relays Redis pub/sub messages to WebSocket clients."""

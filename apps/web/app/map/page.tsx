@@ -55,6 +55,7 @@ export default function MapPage() {
       ...t,
       latitude: live.latitude,
       longitude: live.longitude,
+      speed_kmh: live.speed_kmh ?? t.speed_kmh,
       current_delay_min: live.current_delay_min,
       next_station: live.next_station,
       status:
@@ -65,6 +66,8 @@ export default function MapPage() {
           : "severely_delayed",
     };
   });
+
+  const selectedSpeed = selected?.liveMsg?.speed_kmh ?? selected?.summary?.speed_kmh;
 
   return (
     <main className="page" style={{ overflow: "hidden" }}>
@@ -135,10 +138,13 @@ export default function MapPage() {
                   </span>
                 </div>
               )}
-              {selected.liveMsg?.speed_kmh && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Speed</span>
-                  <span className="text-gray-300">{Math.round(selected.liveMsg.speed_kmh)} km/h</span>
+              {selectedSpeed != null && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Live Speed</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+                    <span className={`h-1.5 w-1.5 rounded-full ${selectedSpeed > 2 ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+                    {selectedSpeed > 2 ? `${Math.round(selectedSpeed)} km/h` : "Halted (0 km/h)"}
+                  </span>
                 </div>
               )}
             </div>

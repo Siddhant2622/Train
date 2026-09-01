@@ -76,12 +76,23 @@ export function TrainCard({ train }: TrainCardProps) {
         <span className="truncate">{train.destination_station}</span>
       </div>
 
-      {train.next_station && (
-        <div className="mt-2 text-[10px] text-gray-600">
-          Next stop:{" "}
-          <span className="text-indigo-400">{train.next_station}</span>
-        </div>
-      )}
+      <div className="mt-2 flex items-center justify-between text-[11px]">
+        {train.next_station ? (
+          <div className="text-gray-500 truncate">
+            Next: <span className="text-indigo-400 font-medium">{train.next_station}</span>
+          </div>
+        ) : <div />}
+        {train.speed_kmh != null && (
+          <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium ${
+            train.speed_kmh > 2 
+              ? "bg-emerald-950/40 border border-emerald-800/40 text-emerald-400" 
+              : "bg-gray-900 border border-gray-800 text-gray-400"
+          }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${train.speed_kmh > 2 ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`} />
+            {train.speed_kmh > 2 ? `${Math.round(train.speed_kmh)} km/h` : "Halted"}
+          </span>
+        )}
+      </div>
     </Link>
   );
 }

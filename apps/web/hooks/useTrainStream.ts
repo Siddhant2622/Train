@@ -21,6 +21,7 @@ export interface TrainStreamMessage {
   current_delay_min: number;
   last_station: string;
   next_station: string;
+  distance_to_next_km?: number | null;
   upcoming_stops: Array<{
     station_code: string;
     station_name: string;
