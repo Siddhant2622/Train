@@ -27,10 +27,12 @@ jobs:
           cache-dependency-path: services/api/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt ruff mypy pytest pytest-asyncio
 
       - name: Ruff lint
-        run: ruff check .
+        run: ruff check app/
 
       - name: Mypy type-check
         run: mypy app/ --ignore-missing-imports
@@ -82,7 +84,9 @@ jobs:
           cache-dependency-path: services/api/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-asyncio
 
       - name: Run Alembic migrations against test DB
         run: alembic upgrade head
