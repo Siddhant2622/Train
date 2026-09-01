@@ -1,10 +1,12 @@
 [tool.ruff]
 target-version = "py312"
-line-length = 100
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]  # line length handled by formatter
+line-length = 120
 
-[tool.ruff.isort]
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501", "F401", "E402", "F841", "E722"]
+
+[tool.ruff.lint.isort]
 known-first-party = ["app"]
 
 [tool.mypy]

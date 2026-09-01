@@ -16,3 +16,7 @@ shap>=0.45.0
 pandas>=2.2.2
 scikit-learn>=1.5.0
 prometheus-fastapi-instrumentator>=7.0.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+ruff>=0.4.0
+mypy>=1.10.0
